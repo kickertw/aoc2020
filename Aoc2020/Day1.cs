@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Principal;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Aoc2020
 {
     public static class Day1
     {
-        public static int Part1(List<int> inputs, int acceptedSum = 2020)
+        public static int Part1(IEnumerable<string> rawInputs, int acceptedSum = 2020)
         {
-            for(var ii = 0; ii < inputs.Count; ii++)
+            var inputs = rawInputs.Select(line => int.Parse(line)).ToList();
+
+            for (var ii = 0; ii < inputs.Count; ii++)
             {
                 for (var jj = 0; jj < inputs.Count; jj++)
                 {
@@ -23,8 +23,10 @@ namespace Aoc2020
             return -1;
         }
 
-        public static int Part2(List<int> inputs, int acceptedSum = 2020)
+        public static int Part2(IEnumerable<string> rawInputs, int acceptedSum = 2020)
         {
+            var inputs = rawInputs.Select(line => int.Parse(line)).ToList();
+
             for (var ii = 0; ii < inputs.Count; ii++)
             {
                 for (var jj = 0; jj < inputs.Count; jj++)
