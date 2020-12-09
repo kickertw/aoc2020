@@ -77,17 +77,17 @@ namespace Aoc2020
 
         public int CountChildren(HashSet<Bag> rootBags)
         {
-            var retval = 0;
+            var retVal = 0;
 
-            if (ChildBags == null) return retval;
+            if (ChildBags == null) return retVal;
 
             foreach (var child in ChildBags)
             {
                 var realChild = rootBags.FirstOrDefault(i => i.Color == child.Color);
-                retval += child.Qty + (child.Qty * (realChild?.CountChildren(rootBags) ?? 0));
+                retVal += child.Qty + (child.Qty * (realChild?.CountChildren(rootBags) ?? 0));
             }
 
-            return retval;
+            return retVal;
         }
     }
 }

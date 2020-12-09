@@ -33,11 +33,11 @@ namespace Aoc2020
                     instructions[ii] = "nop " + instruction[1];
                 }
 
-                var answer = GetTheAnswer(instructions);
+                var (key, value) = GetTheAnswer(instructions);
 
-                if (answer.Value)
+                if (value)
                 {
-                    return answer.Key;
+                    return key;
                 }
             }
 
