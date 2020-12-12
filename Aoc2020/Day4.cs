@@ -99,7 +99,7 @@ namespace Aoc2020
         }
 
         // To help w/ Debugging
-        public string ToString()
+        public new string ToString()
         {
             if (IsValid())
             {
