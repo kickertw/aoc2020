@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Aoc2020
 {
-    //--- Day 14: Docking Data ---
+    //--- Day 15: Rambunctious Recitation ---
     public static class Day15
     {
         public static int Part1(IEnumerable<string> rawInputs, int turnToGet = 2020)
