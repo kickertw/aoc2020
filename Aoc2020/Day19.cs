@@ -14,7 +14,6 @@ namespace Aoc2020
         public static int Part1(IEnumerable<string> rawInputs)
         {
             var rules = new Dictionary<int, string>();
-            var allowedPatterns = new HashSet<string>();
             var messages = new List<string>();
 
             // Parse Inputs
@@ -42,7 +41,7 @@ namespace Aoc2020
             rules = SimplifyRuleSet(rules);
 
             // Generate all possible combinations
-            allowedPatterns = GetAllowedPatterns(rules);
+            var allowedPatterns = GetAllowedPatterns(rules);
 
             var retVal = 0;
             foreach(var message in messages)
@@ -56,21 +55,111 @@ namespace Aoc2020
         // There is a more efficient way, this is just brute forcing :(
         public static long Part2(IEnumerable<string> rawInputs)
         {
-            return 0;
+            var rules = new Dictionary<int, string>();
+            var messages = new List<string>();
+
+            // Parse Inputs
+            var parseForRules = true;
+            foreach (var rawInput in rawInputs)
+            {
+                if (rawInput.Length == 0)
+                {
+                    parseForRules = false;
+                    continue;
+                }
+
+                if (parseForRules)
+                {
+                    var ruleset = rawInput.Split(": ");
+                    var ruleId = int.Parse(ruleset[0]);
+                    rules.Add(ruleId, ruleset[1]);
+                }
+                else
+                {
+                    messages.Add(rawInput);
+                }
+            }
+
+            rules = SimplifyRuleSet(rules, new List<int>() { 8, 11 });
+
+            // Generate all possible combinations
+            var allowedPatterns = new Dictionary<int, HashSet<string>>();
+            //allowedPatterns[8] = GetAllowedPatterns(rules, 8);
+            //allowedPatterns[11] = GetAllowedPatterns(rules, 11);
+            allowedPatterns[42] = GetAllowedPatterns(rules, 42);
+            allowedPatterns[31] = GetAllowedPatterns(rules, 31);
+
+            //0: 8 11
+            //8: 42 | 42 8
+            //11: 42 31 | 42 11 31
+            var retVal = 0;
+            foreach (var message in messages)
+            {
+                int rule1CheckCount = 0, rule2CheckCount = 0;
+                var msgCheck = message;
+                while (true)
+                {
+                    restart42:
+                    if (msgCheck.Length > 0 && rule2CheckCount == 0)
+                    {
+                        foreach (var pattern in allowedPatterns[42])
+                        {
+                            if (msgCheck.IndexOf(pattern) == 0)
+                            {
+                                rule1CheckCount++;
+                                msgCheck = msgCheck[pattern.Length..];
+                                goto restart42;
+                            }
+                        }
+                    }
+
+                    restart32:
+                    if (msgCheck.Length > 0 && rule1CheckCount > 0)
+                    {
+                        foreach (var pattern in allowedPatterns[31])
+                        {
+                            if (msgCheck.IndexOf(pattern) == 0)
+                            {
+                                rule2CheckCount++;
+                                msgCheck = msgCheck[pattern.Length..];
+                                goto restart32;
+                            }
+                        }
+                    }
+
+                    if (msgCheck.Length == 0 && rule1CheckCount > rule2CheckCount && rule2CheckCount > 0)
+                    {
+                        Console.Out.WriteLine($"r1={rule1CheckCount}, r2={rule2CheckCount}");
+                        retVal++;
+                    }
+                    break;
+                }
+            }
+
+            return retVal;
         }
 
-        private static HashSet<string> GetAllowedPatterns(Dictionary<int, string> allRules)
+        private static HashSet<string> GetAllowedPatterns(Dictionary<int, string> allRules, int ruleId = 0)
         {
             var retVal = new HashSet<string>();
             var workingList = new HashSet<string>();
-            workingList.Add(allRules[0]);
+            workingList.Add(allRules[ruleId]);
 
             while (workingList.Any())
             {                
                 var oldRule = workingList.First();
-                if (Regex.IsMatch(oldRule, @"^[ab ]*$"))
+                if (Regex.IsMatch(oldRule, @"^[ab\| ]*$"))
                 {
-                    retVal.Add(Regex.Replace(oldRule, @"\s+", ""));
+                    if (oldRule.IndexOf("|") == -1)
+                    {
+                        retVal.Add(Regex.Replace(oldRule, @"\s+", ""));
+                    }
+                    else
+                    {
+                        var oldRuleSplit = oldRule.Split(" | ");
+                        retVal.Add(Regex.Replace(oldRuleSplit[0], @"\s+", ""));
+                        retVal.Add(Regex.Replace(oldRuleSplit[1], @"\s+", ""));
+                    }
                     workingList.Remove(oldRule);
                     continue;
                 }
@@ -143,11 +232,13 @@ namespace Aoc2020
         /// </summary>
         /// <param name="allRules"></param>
         /// <returns></returns>
-        private static Dictionary<int, string> SimplifyRuleSet(Dictionary<int, string> allRules)
+        private static Dictionary<int, string> SimplifyRuleSet(Dictionary<int, string> allRules, List<int> rulesToKeep = null)
         {
+            rulesToKeep ??= new List<int>();
             var aIndex = allRules.First(x => x.Value == "\"a\"").Key;
             var bIndex = allRules.First(x => x.Value == "\"b\"").Key;
-            for (var ii = 0; ii < allRules.Count(); ii++)
+
+            foreach (var ii in allRules.Keys.ToList())
             {
                 if (ii != aIndex && ii != bIndex)
                 {
@@ -172,10 +263,10 @@ namespace Aoc2020
             allRules.Remove(aIndex);
             allRules.Remove(bIndex);
 
-            while (!allRules.Where(i => i.Key > 0).All(i => i.Value.Contains("|")))
+            while (!allRules.Where(i => !rulesToKeep.Contains(i.Key)).All(i => i.Value.Contains("|")))
             {
-                var ruleToRemove = new List<int>();
-                var noPermRuleIds = allRules.Where(i => !i.Value.Split(' ').Any(j => j == "|") && i.Key > 0).Select(i => i.Key).ToList();
+                var noPermRuleIds = allRules.Where(i => !i.Value.Split(' ').Any(j => j == "|") && !rulesToKeep.Contains(i.Key)).Select(i => i.Key).ToList();
+
                 foreach (var nprId in noPermRuleIds)
                 {
                     var newVal = allRules[nprId];
@@ -194,7 +285,10 @@ namespace Aoc2020
                         allRules[rtfId] = string.Join(" ", splitRule);
                     }
 
-                    allRules.Remove(nprId);
+                    if (!rulesToKeep.Contains(nprId))
+                    {
+                        allRules.Remove(nprId);
+                    }                    
                 }
             }
 
